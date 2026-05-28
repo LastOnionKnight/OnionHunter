@@ -1,0 +1,26 @@
+[
+{
+    "Author":  "Aisling O\u0027Callaghan",
+    "Name":  "Onion Hunter",
+    "InternalName":  "OnionHunter",
+    "AssemblyVersion":  "0.1.0.0",
+    "Punchline":  "Your real, observed retainer-venture odds.",
+    "Description":  "Logs every retainer venture return and computes your own observed drop rate for tracked items (Peregrine Helm, Onion gear, etc.). No invented percentages — just your data, with a confidence interval so small samples don\u0027t lie.",
+    "RepoUrl":  "https://github.com/LastOnionKnight/OnionHunter",
+    "DalamudApiLevel":  15,
+    "ApplicableVersion":  "any",
+    "Tags":  [
+                 "venture",
+                 "retainer",
+                 "tracker",
+                 "drops",
+                 "onion"
+             ],
+    "DownloadLinkInstall":  "https://raw.githubusercontent.com/LastOnionKnight/OnionHunter/main/dist/latest.zip",
+    "DownloadLinkUpdate":  "https://raw.githubusercontent.com/LastOnionKnight/OnionHunter/main/dist/latest.zip",
+    "DownloadLinkTesting":  "https://raw.githubusercontent.com/LastOnionKnight/OnionHunter/main/dist/latest.zip",
+    "IsTestingExclusive":  false,
+    "LoadRequiredState":  0,
+    "CanUnloadAsync":  false
+}
+]
