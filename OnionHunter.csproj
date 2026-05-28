@@ -1,0 +1,19 @@
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Version>0.1.0.0</Version>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <!--
+    Dalamud.NET.Sdk auto-references:
+      - Dalamud, Dalamud.Bindings.ImGui, FFXIVClientStructs, Lumina, Lumina.Excel
+      - the correct DalamudApiLevel for the installed Dalamud (15.x)
+    so we do NOT hand-reference dalamud dlls or hardcode the API level here.
+  -->
+
+</Project>
