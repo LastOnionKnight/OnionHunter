@@ -18,7 +18,8 @@ public class Configuration : IPluginConfiguration
     {
         "Peregrine Helm",
         "Onion Doublet",
-        "Onion Sorrel",
+        "Onion Gaskins",
+        "Onion Pattens",
     };
 
     /// <summary>

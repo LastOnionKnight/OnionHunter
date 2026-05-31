@@ -18,8 +18,10 @@ public sealed unsafe class VentureLogger : IDisposable
 
     public VentureLogger(Plugin plugin) => _plugin = plugin;
 
+    private long _lastLoggedUnix;
+
     public void Enable()
-        => Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostSetup, AddonName, OnResult);
+        => Plugin.AddonLifecycle.RegisterListener(AddonEvent.PostUpdate, AddonName, OnResult);
 
     public void Dispose()
         => Plugin.AddonLifecycle.UnregisterListener(OnResult);
@@ -28,6 +30,9 @@ public sealed unsafe class VentureLogger : IDisposable
     {
         try
         {
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            if (now - _lastLoggedUnix < 5) return; // Debounce 5 seconds per window
+
             var addon = (AtkUnitBase*)args.Addon.Address;
             if (addon == null) return;
 
@@ -61,6 +66,7 @@ public sealed unsafe class VentureLogger : IDisposable
             _plugin.Config.Records.Add(record);
             _plugin.Config.Save();
 
+            _lastLoggedUnix = now;
             Plugin.Log.Information($"[OnionHunter] Logged venture return: {record.ItemName}");
         }
         catch (Exception ex)
