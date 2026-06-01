@@ -35,7 +35,7 @@ public sealed class MainWindow : Window
 
         ImGui.Separator();
 
-        foreach (var name in cfg.TargetItemNames)
+        foreach (var name in cfg.TargetItemNames.Distinct())
         {
             var resolved = Items.Resolve(name);
             if (resolved is not { } item)

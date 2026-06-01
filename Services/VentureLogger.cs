@@ -35,13 +35,37 @@ public sealed unsafe class VentureLogger : IDisposable
             var addon = (AtkUnitBase*)args.Addon.Address;
             if (addon == null) return;
 
-            var resolved = FindItemNameRecursively(&addon->UldManager);
+            (uint Id, string Name)? resolved = null;
+            if (_plugin.Config.ItemNameNodeId > 0)
+            {
+                var node = addon->GetNodeById(_plugin.Config.ItemNameNodeId);
+                if (node != null && node->Type == NodeType.Text)
+                {
+                    var tn = (AtkTextNode*)node;
+                    var text = tn->NodeText.ToString();
+                    if (!string.IsNullOrWhiteSpace(text))
+                    {
+                        var cleanText = text.Replace("", "").Trim();
+                        resolved = Items.Resolve(cleanText);
+                    }
+                }
+            }
+
+            if (resolved == null)
+            {
+                resolved = FindItemNameRecursively(&addon->UldManager);
+            }
+
             if (resolved == null)
             {
                 if (_plugin.Config.DebugDumpNodes)
                     Plugin.Log.Warning("[OnionHunter] Venture returned but no item name found in UI.");
                 return;
             }
+
+            // Exclude "Venture" itself as it's the currency and usually present in UI text.
+            if (resolved.Value.Name.Equals("Venture", StringComparison.OrdinalIgnoreCase))
+                return;
 
             var record = new VentureRecord
             {
@@ -83,9 +107,8 @@ public sealed unsafe class VentureLogger : IDisposable
                 {
                     // Basic cleanup in case of UI control characters like HQ icon
                     var cleanText = text.Replace("", "").Trim();
-                    
                     var resolved = Items.Resolve(cleanText);
-                    if (resolved != null && resolved.Value.Id != 0)
+                    if (resolved != null && resolved.Value.Id != 0 && !resolved.Value.Name.Equals("Venture", StringComparison.OrdinalIgnoreCase))
                         return resolved;
                 }
             }
