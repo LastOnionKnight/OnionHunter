@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Dalamud.Game.Addon.Lifecycle;
 using Dalamud.Game.Addon.Lifecycle.AddonArgTypes;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -6,10 +7,8 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 namespace OnionHunter.Services;
 
 /// <summary>
-/// Listens for the "RetainerTaskResult" window (the "your retainer has returned with..."
-/// panel) and records the item shown. We read the item by its on-screen NAME from a text
-/// node and resolve that to an item id, rather than guessing struct offsets -- UI text is far
-/// more stable across patches than struct layouts.
+/// Listens for the "RetainerTaskResult" window and records the item shown.
+/// We recursively scan the UI tree for any text node that resolves to a valid item name.
 /// </summary>
 public sealed unsafe class VentureLogger : IDisposable
 {
@@ -36,31 +35,19 @@ public sealed unsafe class VentureLogger : IDisposable
             var addon = (AtkUnitBase*)args.Addon.Address;
             if (addon == null) return;
 
-            if (_plugin.Config.DebugDumpNodes)
-                DumpTextNodes(addon);
-
-            var nodeId = _plugin.Config.ItemNameNodeId;
-            if (nodeId == 0)
+            var resolved = FindItemNameRecursively(&addon->UldManager);
+            if (resolved == null)
             {
-                Plugin.Log.Information(
-                    "[OnionHunter] A venture returned, but no ItemNameNodeId is set yet. " +
-                    "Turn on 'Dump venture-window nodes' in the window, run one more venture, " +
-                    "find the node whose text is the item name, and paste its id in.");
+                if (_plugin.Config.DebugDumpNodes)
+                    Plugin.Log.Warning("[OnionHunter] Venture returned but no item name found in UI.");
                 return;
             }
 
-            var node = addon->GetTextNodeById(nodeId);
-            if (node == null) return;
-
-            var windowText = node->NodeText.ToString().Trim();
-            if (string.IsNullOrWhiteSpace(windowText)) return;
-
-            var resolved = Items.Resolve(windowText);
             var record = new VentureRecord
             {
                 TimestampUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                ItemId = resolved?.Id ?? 0,
-                ItemName = resolved?.Name ?? windowText,
+                ItemId = resolved.Value.Id,
+                ItemName = resolved.Value.Name,
             };
 
             _plugin.Config.Records.Add(record);
@@ -75,16 +62,41 @@ public sealed unsafe class VentureLogger : IDisposable
         }
     }
 
-    /// <summary>Logs every text node id + text so you can find the item-name node once.</summary>
-    private static void DumpTextNodes(AtkUnitBase* addon)
+    private static (uint Id, string Name)? FindItemNameRecursively(AtkUldManager* mgr)
     {
-        var mgr = addon->UldManager;
-        for (var i = 0; i < mgr.NodeListCount; i++)
+        if (mgr == null) return null;
+
+        for (var i = 0; i < mgr->NodeListCount; i++)
         {
-            var n = mgr.NodeList[i];
-            if (n == null || n->Type != NodeType.Text) continue;
-            var tn = (AtkTextNode*)n;
-            Plugin.Log.Information($"[OnionHunter][node] id={n->NodeId} text='{tn->NodeText}'");
+            var n = mgr->NodeList[i];
+            if (n == null) continue;
+
+            if (n->Type == NodeType.Text)
+            {
+                var tn = (AtkTextNode*)n;
+                var text = tn->NodeText.ToString();
+                
+                // Usually items have a weird prefix character like the HQ symbol or the rare item symbol.
+                // We'll clean it up, or just let Lumina resolve it.
+                // We strip out unprintable chars or rely on Items.Resolve being fuzzy.
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    // Basic cleanup in case of UI control characters like HQ icon
+                    var cleanText = text.Replace("", "").Trim();
+                    
+                    var resolved = Items.Resolve(cleanText);
+                    if (resolved != null && resolved.Value.Id != 0)
+                        return resolved;
+                }
+            }
+            
+            var cn = n->GetAsAtkComponentNode();
+            if (cn != null && cn->Component != null)
+            {
+                var found = FindItemNameRecursively(&cn->Component->UldManager);
+                if (found != null) return found;
+            }
         }
+        return null;
     }
 }
