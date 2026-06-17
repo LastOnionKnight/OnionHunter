@@ -42,11 +42,15 @@ public sealed unsafe class VentureLogger : IDisposable
                 if (node != null && node->Type == NodeType.Text)
                 {
                     var tn = (AtkTextNode*)node;
-                    var text = tn->NodeText.ToString();
-                    if (!string.IsNullOrWhiteSpace(text))
+                    if (tn->NodeText.StringPtr.Value != null)
                     {
-                        var cleanText = text.Replace("", "").Trim();
-                        resolved = Items.Resolve(cleanText);
+                        var seString = Dalamud.Memory.MemoryHelper.ReadSeStringNullTerminated((nint)tn->NodeText.StringPtr.Value);
+                        var text = seString.TextValue;
+                        if (!string.IsNullOrWhiteSpace(text))
+                        {
+                            var cleanText = text.Replace("", "").Trim();
+                            resolved = Items.Resolve(cleanText);
+                        }
                     }
                 }
             }
@@ -98,18 +102,18 @@ public sealed unsafe class VentureLogger : IDisposable
             if (n->Type == NodeType.Text)
             {
                 var tn = (AtkTextNode*)n;
-                var text = tn->NodeText.ToString();
-                
-                // Usually items have a weird prefix character like the HQ symbol or the rare item symbol.
-                // We'll clean it up, or just let Lumina resolve it.
-                // We strip out unprintable chars or rely on Items.Resolve being fuzzy.
-                if (!string.IsNullOrWhiteSpace(text))
+                if (tn->NodeText.StringPtr.Value != null)
                 {
-                    // Basic cleanup in case of UI control characters like HQ icon
-                    var cleanText = text.Replace("", "").Trim();
-                    var resolved = Items.Resolve(cleanText);
-                    if (resolved != null && resolved.Value.Id != 0 && !resolved.Value.Name.Equals("Venture", StringComparison.OrdinalIgnoreCase))
-                        return resolved;
+                    var seString = Dalamud.Memory.MemoryHelper.ReadSeStringNullTerminated((nint)tn->NodeText.StringPtr.Value);
+                    var text = seString.TextValue;
+                    
+                    if (!string.IsNullOrWhiteSpace(text))
+                    {
+                        var cleanText = text.Replace("", "").Trim();
+                        var resolved = Items.Resolve(cleanText);
+                        if (resolved != null && resolved.Value.Id != 0 && !resolved.Value.Name.Equals("Venture", StringComparison.OrdinalIgnoreCase))
+                            return resolved;
+                    }
                 }
             }
             
