@@ -1,5 +1,13 @@
 bin/
 obj/
 .vs/
+.vscode/
+.idea/
 *.user
 *.suo
+*.log
+
+# Local distribution inspection/extraction artifacts.
+# dist/latest.zip remains tracked because repo.json installs from it.
+dist/unzipped*/
+test_unzip/
