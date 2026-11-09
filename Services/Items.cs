@@ -14,10 +14,14 @@ internal static class Items
     {
         if (string.IsNullOrWhiteSpace(name)) return null;
 
-        // Strip quantity (e.g., "Fire Shard x 20" -> "Fire Shard")
-        var match = System.Text.RegularExpressions.Regex.Match(name, @"^(.*)\s+x\s*\d+$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        if (match.Success)
-            name = match.Groups[1].Value.Trim();
+        // Clean non-printable SeString control codes, HQ icons, and non-breaking spaces
+        name = System.Text.RegularExpressions.Regex.Replace(name, @"[\u0000-\u001F\u007F-\u009F\u00a0]", "").Trim();
+
+        // Strip prefix quantity (e.g. "1 Peregrine Helm" -> "Peregrine Helm", "20 Fire Shard" -> "Fire Shard")
+        name = System.Text.RegularExpressions.Regex.Replace(name, @"^\d+\s+", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
+
+        // Strip suffix quantity (e.g. "Fire Shard x 20" or "Fire Shard × 20" -> "Fire Shard")
+        name = System.Text.RegularExpressions.Regex.Replace(name, @"\s+[xX×]\s*\d+$", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase).Trim();
 
         var sheet = Plugin.Data.GetExcelSheet<Item>();
         if (sheet == null) return null;

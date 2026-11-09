@@ -11,3 +11,5 @@ obj/
 # dist/latest.zip remains tracked because repo.json installs from it.
 dist/unzipped*/
 test_unzip/
+
+dist/
